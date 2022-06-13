@@ -9,6 +9,7 @@ public interface IDomainService
 {
     Task<bool> CheckAvailablity(string name);
     Task<List<DomainPrice>> ListPrices();
+    Task<List<DomainSuggestion>> GetDomainSuggestions(string name);
 }
 
 public class DomainService : IDomainService
@@ -52,5 +53,16 @@ public class DomainService : IDomainService
             MaxItems = 20
         });
         return response.Prices;
+    }
+
+    public async Task<List<DomainSuggestion>> GetDomainSuggestions(string name)
+    {
+        var response = await _domainsClient.GetDomainSuggestionsAsync(new GetDomainSuggestionsRequest
+        {
+            DomainName = name,
+            OnlyAvailable = true,
+            SuggestionCount = 20
+        });
+        return response.SuggestionsList;
     }
 }

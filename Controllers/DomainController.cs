@@ -28,4 +28,11 @@ public class DomainController : ControllerBase
     {
         return Ok(await _domainService.ListPrices());
     }
+
+    [HttpGet]
+    [Route("suggestion/{name}")]
+    public async Task<ActionResult<List<DomainSuggestion>>> GetDomainSuggestions(string name)
+    {
+        return Ok(await _domainService.GetDomainSuggestions(name));
+    }
 }
