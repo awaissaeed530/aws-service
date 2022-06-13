@@ -2,6 +2,8 @@ using Amazon;
 using Amazon.Route53;
 using Amazon.Route53Domains;
 using Amazon.Route53Domains.Model;
+using Amazon.CertificateManager;
+using Amazon.CertificateManager.Model;
 
 namespace aws_service.Services;
 
@@ -10,12 +12,15 @@ public interface IDomainService
     Task<bool> CheckAvailablity(string name);
     Task<List<DomainPrice>> ListPrices();
     Task<List<DomainSuggestion>> GetDomainSuggestions(string name);
+    Task<string> RegisterDomain(RegisterDomainRequest request);
+    Task<string> RequestSSL(string domainName);
 }
 
 public class DomainService : IDomainService
 {
     private readonly AmazonRoute53Client _client;
     private readonly AmazonRoute53DomainsClient _domainsClient;
+    private readonly AmazonCertificateManagerClient _certificateManagerClient;
     private readonly IConfiguration _configuration;
     private readonly ILogger<DomainService> _logger;
 
@@ -32,6 +37,11 @@ public class DomainService : IDomainService
             RegionEndpoint.USEast2);
 
         _domainsClient = new AmazonRoute53DomainsClient(
+            _configuration.GetValue<string>("Aws:Key"),
+            _configuration.GetValue<string>("Aws:KeySecret"),
+            RegionEndpoint.USEast2);
+
+        _certificateManagerClient = new AmazonCertificateManagerClient(
             _configuration.GetValue<string>("Aws:Key"),
             _configuration.GetValue<string>("Aws:KeySecret"),
             RegionEndpoint.USEast2);
@@ -64,5 +74,20 @@ public class DomainService : IDomainService
             SuggestionCount = 20
         });
         return response.SuggestionsList;
+    }
+
+    public async Task<string> RegisterDomain(RegisterDomainRequest request)
+    {
+        var response = await _domainsClient.RegisterDomainAsync(request);
+        return response.OperationId;
+    }
+
+    public async Task<string> RequestSSL(string domainName)
+    {
+        var response = await _certificateManagerClient.RequestCertificateAsync(new RequestCertificateRequest
+        {
+            DomainName = domainName
+        });
+        return response.CertificateArn;
     }
 }

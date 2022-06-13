@@ -35,4 +35,18 @@ public class DomainController : ControllerBase
     {
         return Ok(await _domainService.GetDomainSuggestions(name));
     }
+
+    [HttpPost]
+    [Route("register")]
+    public async Task<ActionResult<string>> RegisterDomain([FromBody] RegisterDomainRequest request)
+    {
+        return Ok(await _domainService.RegisterDomain(request));
+    }
+
+    [HttpPost]
+    [Route("ssl/request/{domain}")]
+    public async Task<ActionResult<string>> RequestSSL(string domainName)
+    {
+        return Ok(await _domainService.RequestSSL(domainName));
+    }
 }
