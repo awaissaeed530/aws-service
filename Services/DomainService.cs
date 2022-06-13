@@ -8,6 +8,7 @@ namespace aws_service.Services;
 public interface IDomainService
 {
     Task<bool> CheckAvailablity(string name);
+    Task<List<DomainPrice>> ListPrices();
 }
 
 public class DomainService : IDomainService
@@ -42,5 +43,14 @@ public class DomainService : IDomainService
             DomainName = name
         });
         return response.Availability == DomainAvailability.AVAILABLE;
+    }
+
+    public async Task<List<DomainPrice>> ListPrices()
+    {
+        var response = await _domainsClient.ListPricesAsync(new ListPricesRequest
+        {
+            MaxItems = 20
+        });
+        return response.Prices;
     }
 }
