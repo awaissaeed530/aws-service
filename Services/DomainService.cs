@@ -34,17 +34,17 @@ public class DomainService : IDomainService
         _client = new AmazonRoute53Client(
             _configuration.GetValue<string>("Aws:Key"),
             _configuration.GetValue<string>("Aws:KeySecret"),
-            RegionEndpoint.USEast2);
+            RegionEndpoint.USEast1);
 
         _domainsClient = new AmazonRoute53DomainsClient(
             _configuration.GetValue<string>("Aws:Key"),
             _configuration.GetValue<string>("Aws:KeySecret"),
-            RegionEndpoint.USEast2);
+            RegionEndpoint.USEast1);
 
         _certificateManagerClient = new AmazonCertificateManagerClient(
             _configuration.GetValue<string>("Aws:Key"),
             _configuration.GetValue<string>("Aws:KeySecret"),
-            RegionEndpoint.USEast2);
+            RegionEndpoint.USEast1);
     }
 
     public async Task<bool> CheckAvailablity(string name)
