@@ -4,16 +4,15 @@ using Amazon.Route53Domains;
 using Amazon.Route53Domains.Model;
 using Amazon.CertificateManager;
 using Amazon.CertificateManager.Model;
+using aws_service.Models;
+using Foundatio.Caching;
 
 namespace aws_service.Services;
 
 public interface IDomainService
 {
-    Task<bool> CheckAvailablity(string name);
-    Task<List<DomainPrice>> ListPrices();
-    Task<List<DomainSuggestion>> GetDomainSuggestions(string name);
+    Task<CheckAvailabilityResponse> CheckAvailablity(string name);
     Task<string> RegisterDomain(RegisterDomainRequest request);
-    Task<string> RequestSSL(string domainName);
 }
 
 public class DomainService : IDomainService
@@ -23,6 +22,7 @@ public class DomainService : IDomainService
     private readonly AmazonCertificateManagerClient _certificateManagerClient;
     private readonly IConfiguration _configuration;
     private readonly ILogger<DomainService> _logger;
+    private readonly InMemoryCacheClient _cache;
 
     public DomainService(
         IConfiguration configuration,
@@ -30,6 +30,7 @@ public class DomainService : IDomainService
     {
         _configuration = configuration;
         _logger = logger;
+        _cache = new InMemoryCacheClient();
 
         _client = new AmazonRoute53Client(
             _configuration.GetValue<string>("Aws:Key"),
@@ -47,7 +48,35 @@ public class DomainService : IDomainService
             RegionEndpoint.USEast1);
     }
 
-    public async Task<bool> CheckAvailablity(string name)
+    public async Task<CheckAvailabilityResponse> CheckAvailablity(string name)
+    {
+        string? tld;
+        if (!name.Contains('.'))
+        {
+            tld = "com";
+            name = $"{name}.{tld}";
+        }
+        else
+        {
+            tld = name.Split('.')[1];
+        }
+
+        var availablity = await GetDomainAvailability(name);
+        var price = await GetDomainPriceByTld(tld);
+        var suggestions = await GetDomainSuggestions(name);
+
+        var response = new CheckAvailabilityResponse
+        {
+            Name = name,
+            Available = availablity,
+            Price = new Price { Amount = price.RegistrationPrice.Price, Currency = price.RegistrationPrice.Currency },
+            Suggestions = await ConvertSuggestionsToDomains(suggestions)
+        };
+
+        return response;
+    }
+
+    private async Task<bool> GetDomainAvailability(string name)
     {
         var response = await _domainsClient.CheckDomainAvailabilityAsync(new CheckDomainAvailabilityRequest
         {
@@ -56,16 +85,27 @@ public class DomainService : IDomainService
         return response.Availability == DomainAvailability.AVAILABLE;
     }
 
-    public async Task<List<DomainPrice>> ListPrices()
+    private async Task<DomainPrice> GetDomainPriceByTld(string tld)
     {
-        var response = await _domainsClient.ListPricesAsync(new ListPricesRequest
+        var cachePrice = await _cache.GetAsync<DomainPrice>(tld);
+
+        if (cachePrice.HasValue)
         {
-            MaxItems = 20
-        });
-        return response.Prices;
+            return cachePrice.Value;
+        }
+        else
+        {
+            var response = await _domainsClient.ListPricesAsync(new ListPricesRequest
+            {
+                Tld = tld,
+            });
+            var price = response.Prices.First();
+            await _cache.AddAsync(tld, price);
+            return price;
+        }
     }
 
-    public async Task<List<DomainSuggestion>> GetDomainSuggestions(string name)
+    private async Task<List<DomainSuggestion>> GetDomainSuggestions(string name)
     {
         var response = await _domainsClient.GetDomainSuggestionsAsync(new GetDomainSuggestionsRequest
         {
@@ -74,6 +114,28 @@ public class DomainService : IDomainService
             SuggestionCount = 20
         });
         return response.SuggestionsList;
+    }
+
+    private async Task<List<Domain>> ConvertSuggestionsToDomains(List<DomainSuggestion> suggestions)
+    {
+        var domainTasks = suggestions.Select(async (suggestion) =>
+        {
+            var tld = suggestion.DomainName.Split('.')[1];
+            var price = await GetDomainPriceByTld(tld);
+
+            return new Domain
+            {
+                Name = suggestion.DomainName,
+                Available = suggestion.Availability == DomainAvailability.AVAILABLE,
+                Price = new Price
+                {
+                    Amount = price.RegistrationPrice.Price,
+                    Currency = price.RegistrationPrice.Currency
+                }
+            };
+        });
+        var domains = await Task.WhenAll(domainTasks);
+        return domains.ToList();
     }
 
     public async Task<string> RegisterDomain(RegisterDomainRequest request)
