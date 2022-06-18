@@ -15,6 +15,7 @@ public interface IDomainService
 {
     Task<CheckAvailabilityResponse> CheckAvailablity(string name);
     Task<string> RegisterDomain(string name);
+    Task<OperationStatus> GetOperationDetails(string operationId);
 }
 
 public class DomainService : IDomainService
@@ -82,6 +83,29 @@ public class DomainService : IDomainService
         return response;
     }
 
+    public async Task<string> RegisterDomain(string name)
+    {
+        var request = DomainConstants.RegisterDomainRequest;
+        request.DomainName = name;
+
+        var response = await _domainsClient.RegisterDomainAsync(request);
+        await _dbContext.operations.AddAsync(new Operation
+        {
+            OperationId = response.OperationId
+        });
+
+        return response.OperationId;
+    }
+
+    public async Task<OperationStatus> GetOperationDetails(string operationId)
+    {
+        var response = await _domainsClient.GetOperationDetailAsync(new GetOperationDetailRequest
+        {
+            OperationId = operationId
+        });
+        return response.Status;
+    }
+
     private async Task<bool> GetDomainAvailability(string name)
     {
         var response = await _domainsClient.CheckDomainAvailabilityAsync(new CheckDomainAvailabilityRequest
@@ -144,30 +168,7 @@ public class DomainService : IDomainService
         return domains.ToList();
     }
 
-    public async Task<string> RegisterDomain(string name)
-    {
-        var request = DomainConstants.RegisterDomainRequest;
-        request.DomainName = name;
-
-        var response = await _domainsClient.RegisterDomainAsync(request);
-        await _dbContext.operations.AddAsync(new Operation
-        {
-            OperationId = response.OperationId
-        });
-
-        return response.OperationId;
-    }
-
-    private async Task<OperationStatus> GetOperationDetails(string operationId)
-    {
-        var response = await _domainsClient.GetOperationDetailAsync(new GetOperationDetailRequest
-        {
-            OperationId = operationId
-        });
-        return response.Status;
-    }
-
-    public async Task<string> RequestSSL(string domainName)
+    private async Task<string> RequestSSL(string domainName)
     {
         var response = await _certificateManagerClient.RequestCertificateAsync(new RequestCertificateRequest
         {
