@@ -7,6 +7,7 @@ using Amazon.CertificateManager.Model;
 using aws_service.Models;
 using Foundatio.Caching;
 using aws_service.Constants;
+using aws_service.Database;
 
 namespace aws_service.Services;
 
@@ -24,13 +25,17 @@ public class DomainService : IDomainService
     private readonly IConfiguration _configuration;
     private readonly ILogger<DomainService> _logger;
     private readonly InMemoryCacheClient _cache;
+    private readonly ApplicationDbContext _dbContext;
 
     public DomainService(
         IConfiguration configuration,
-        ILogger<DomainService> logger)
+        ILogger<DomainService> logger,
+        ApplicationDbContext dbContext)
     {
         _configuration = configuration;
         _logger = logger;
+        _dbContext = dbContext;
+
         _cache = new InMemoryCacheClient();
 
         _client = new AmazonRoute53Client(
@@ -145,7 +150,21 @@ public class DomainService : IDomainService
         request.DomainName = name;
 
         var response = await _domainsClient.RegisterDomainAsync(request);
+        await _dbContext.operations.AddAsync(new Operation
+        {
+            OperationId = response.OperationId
+        });
+
         return response.OperationId;
+    }
+
+    private async Task<OperationStatus> GetOperationDetails(string operationId)
+    {
+        var response = await _domainsClient.GetOperationDetailAsync(new GetOperationDetailRequest
+        {
+            OperationId = operationId
+        });
+        return response.Status;
     }
 
     public async Task<string> RequestSSL(string domainName)
