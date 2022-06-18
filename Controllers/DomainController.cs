@@ -24,9 +24,9 @@ public class DomainController : ControllerBase
     }
 
     [HttpPost]
-    [Route("register")]
-    public async Task<ActionResult<string>> RegisterDomain([FromBody] RegisterDomainRequest request)
+    [Route("register/{name}")]
+    public async Task<ActionResult<string>> RegisterDomain(string name)
     {
-        return Ok(await _domainService.RegisterDomain(request));
+        return Ok(await _domainService.RegisterDomain(name));
     }
 }

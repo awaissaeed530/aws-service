@@ -6,13 +6,14 @@ using Amazon.CertificateManager;
 using Amazon.CertificateManager.Model;
 using aws_service.Models;
 using Foundatio.Caching;
+using aws_service.Constants;
 
 namespace aws_service.Services;
 
 public interface IDomainService
 {
     Task<CheckAvailabilityResponse> CheckAvailablity(string name);
-    Task<string> RegisterDomain(RegisterDomainRequest request);
+    Task<string> RegisterDomain(string name);
 }
 
 public class DomainService : IDomainService
@@ -138,8 +139,11 @@ public class DomainService : IDomainService
         return domains.ToList();
     }
 
-    public async Task<string> RegisterDomain(RegisterDomainRequest request)
+    public async Task<string> RegisterDomain(string name)
     {
+        var request = DomainConstants.RegisterDomainRequest;
+        request.DomainName = name;
+
         var response = await _domainsClient.RegisterDomainAsync(request);
         return response.OperationId;
     }
