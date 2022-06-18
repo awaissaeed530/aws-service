@@ -93,6 +93,7 @@ public class DomainService : IDomainService
         {
             OperationId = response.OperationId
         });
+        await _dbContext.SaveChangesAsync();
 
         return response.OperationId;
     }

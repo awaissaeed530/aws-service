@@ -25,10 +25,13 @@ namespace aws_service.BackgroundServices
                 var operation = await _domainService.GetOperationDetails(operationId.OperationId);
                 if (operation == OperationStatus.IN_PROGRESS)
                 {
-                    continue;
-                } else
+                    Console.WriteLine($"{operation.Value} is still in progress");
+                }
+                else
                 {
                     Console.WriteLine(operation.Value);
+                    _dbContext.operations.Remove(operationId);
+                    await _dbContext.SaveChangesAsync();
                 }
             }
         }
