@@ -3,6 +3,9 @@ using Amazon.Route53Domains.Model;
 
 namespace aws_service.Constants
 {
+    /// <summary>
+    /// Represents Constant Values used for Domain Registrations
+    /// </summary>
     public static class DomainConstants
     {
         // TODO: Please review this information and update accordingly
@@ -19,6 +22,9 @@ namespace aws_service.Constants
         };
     }
 
+    /// <summary>
+    /// Represents Constant Contact Information used for Domain Registrations
+    /// </summary>
     public static class ContactConstant
     {
         // TODO: Please update this information

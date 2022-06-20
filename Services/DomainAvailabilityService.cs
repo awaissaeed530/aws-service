@@ -9,6 +9,11 @@ namespace aws_service.Services
 {
     public interface IDomainAvailabilityService
     {
+        /// <summary>
+        /// Check availability of given domain name and get a list of suggested domains
+        /// </summary>
+        /// <param name="name">The domain name to check availability of</param>
+        /// <returns></returns>
         Task<CheckAvailabilityResponse> CheckAvailablity(string name);
     }
 
@@ -62,6 +67,12 @@ namespace aws_service.Services
             return response;
         }
 
+        /// <summary>
+        /// Gets the availability status of a domain from AWS
+        /// </summary>
+        /// <param name="name">The domain name to check availability of</param>
+        /// <returns>True if domain is available</returns>
+        /// <exception cref="BadHttpRequestException">If AWS request produces an error</exception>
         private async Task<bool> GetDomainAvailability(string name)
         {
             var response = await _domainsClient.CheckDomainAvailabilityAsync(new CheckDomainAvailabilityRequest
@@ -79,6 +90,12 @@ namespace aws_service.Services
             return response.Availability == DomainAvailability.AVAILABLE;
         }
 
+        /// <summary>
+        /// Gets the prices of a TLD (Top Level Domain) from AWS
+        /// </summary>
+        /// <param name="tld">The TLD</param>
+        /// <returns><see cref="DomainPrice"/> instance of TLD</returns>
+        /// <exception cref="BadHttpRequestException">If AWS request produces an error</exception>
         private async Task<DomainPrice> GetDomainPriceByTld(string tld)
         {
             var cachePrice = await _cache.GetAsync<DomainPrice>(tld);
@@ -103,6 +120,12 @@ namespace aws_service.Services
             }
         }
 
+        /// <summary>
+        /// Get a list of suggested domains from AWS
+        /// </summary>
+        /// <param name="name">Domain name to get suggestions for</param>
+        /// <returns><see cref="List{T}"/> of <see cref="DomainSuggestion"/></returns>
+        /// <exception cref="BadHttpRequestException">If AWS request produces an error</exception>
         private async Task<List<DomainSuggestion>> GetDomainSuggestions(string name)
         {
             var response = await _domainsClient.GetDomainSuggestionsAsync(new GetDomainSuggestionsRequest
@@ -119,6 +142,11 @@ namespace aws_service.Services
             return response.SuggestionsList;
         }
 
+        /// <summary>
+        /// Converts a <see cref="List{T}"/> of <see cref="DomainSuggestion"/> into <see cref="List{T}"/> of <see cref="Domain"/>
+        /// </summary>
+        /// <param name="suggestions">A <see cref="List{T}"/> of <see cref="DomainSuggestion"/></param>
+        /// <returns>A <see cref="List{T}"/> of converted <see cref="Domain"/></returns>
         private async Task<List<Domain>> ConvertSuggestionsToDomains(List<DomainSuggestion> suggestions)
         {
             var domainTasks = suggestions.Select(async (suggestion) =>

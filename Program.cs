@@ -6,20 +6,27 @@ using Quartz;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
+// Add Services to IOC
 builder.Services.AddTransient<ISSLService, SSLService>();
 builder.Services.AddTransient<IHostedZoneService, HostedZoneService>();
 builder.Services.AddTransient<IDomainRecordService, DomainRecordService>();
 builder.Services.AddTransient<IDomainRegistrationService, DomainRegistrationService>();
 builder.Services.AddTransient<IDomainAvailabilityService, DomainAvailabilityService>();
 
+// Add Controllers Endpoints
 builder.Services.AddControllers();
+
+// Add Swagger Documentation
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Required by EFCore
 builder.Services.AddHttpContextAccessor();
 
+// Register ApplicationDbContext with InMemory Database
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseInMemoryDatabase("db"));
 
+// Register Background Hosted Services
 builder.Services.AddQuartz(q =>
 {
     q.UseMicrosoftDependencyInjectionJobFactory();

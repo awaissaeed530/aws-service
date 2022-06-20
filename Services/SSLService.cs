@@ -7,6 +7,11 @@ namespace aws_service.Services
 {
     public interface ISSLService
     {
+        /// <summary>
+        /// Create and associte a SSL certificate with given Route53 domain
+        /// </summary>
+        /// <param name="domainName">The name of domain to associate SSL with</param>
+        /// <returns></returns>
         Task CreateDomainSSL(string domainName);
     }
 
@@ -32,6 +37,11 @@ namespace aws_service.Services
                 RegionEndpoint.USEast1);
         }
 
+        /// <summary>
+        /// Create and associte a SSL certificate with given Route53 domain
+        /// </summary>
+        /// <param name="domainName">The name of domain to associate SSL with</param>
+        /// <returns></returns>
         public async Task CreateDomainSSL(string domainName)
         {
             _logger.LogInformation($"Requesting SSL Certificate for {domainName}.");
@@ -42,6 +52,12 @@ namespace aws_service.Services
             await _domainRecordService.CreateCertificateRecords(resouceRecord, domainName);
         }
 
+        /// <summary>
+        /// Request a new SSL Certificate from AWS
+        /// </summary>
+        /// <param name="domainName">The name of domain to use for SSL Certificate</param>
+        /// <returns>The CertificateArn of generated SSL Certificate</returns>
+        /// <exception cref="BadHttpRequestException">If AWS request produces an error</exception>
         private async Task<string> RequestSSL(string domainName)
         {
             var response = await _certificateManagerClient.RequestCertificateAsync(new RequestCertificateRequest
@@ -57,6 +73,12 @@ namespace aws_service.Services
             return response.CertificateArn;
         }
 
+        /// <summary>
+        /// Get the details of a SSL Certificate by given CertificateArn
+        /// </summary>
+        /// <param name="certificateArn">AWS generated CertificateArn</param>
+        /// <returns><see cref="CertificateDetail"/> of given CertificateArn</returns>
+        /// <exception cref="BadHttpRequestException"></exception>
         private async Task<CertificateDetail> DescribeSSL(string certificateArn)
         {
             var response = await _certificateManagerClient.DescribeCertificateAsync(new DescribeCertificateRequest

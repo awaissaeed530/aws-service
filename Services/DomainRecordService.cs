@@ -8,6 +8,13 @@ namespace aws_service.Services
 {
     public interface IDomainRecordService
     {
+        /// <summary>
+        /// Adds given CNAME records to a Registed Route53 Domain
+        /// </summary>
+        /// <param name="record"><see cref="CertificateResourceRecord"/> to add to Domain</param>
+        /// <param name="domainName">The domain name where records will be added</param>
+        /// <returns></returns>
+        /// <exception cref="BadHttpRequestException">If AWS request produces an error</exception>
         Task CreateCertificateRecords(CertificateResourceRecord record, string domainName);
     }
 
@@ -33,6 +40,13 @@ namespace aws_service.Services
                 RegionEndpoint.USEast1);
         }
 
+        /// <summary>
+        /// Adds given CNAME records to a Registed Route53 Domain
+        /// </summary>
+        /// <param name="record"><see cref="CertificateResourceRecord"/> to add to Domain</param>
+        /// <param name="domainName">The domain name where records will be added</param>
+        /// <returns></returns>
+        /// <exception cref="BadHttpRequestException">If AWS request produces an error</exception>
         public async Task CreateCertificateRecords(CertificateResourceRecord record, string domainName)
         {
             _logger.LogInformation($"Adding SSL Certificate records to {domainName}");

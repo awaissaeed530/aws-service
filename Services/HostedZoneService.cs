@@ -6,6 +6,12 @@ using System.Net;
 namespace aws_service.Services
 {
     public interface IHostedZoneService {
+        /// <summary>
+        /// Creates a new Public Hosted Zone for given domain
+        /// </summary>
+        /// <param name="domainName">The name of domain for which Hosted Zone is to be created</param>
+        /// <returns>The Id of created Hosted Zone</returns>
+        /// <exception cref="BadHttpRequestException">If AWS request produces an error</exception>
         Task<string> CreateHostedZone(string domainName);
     }
 
@@ -28,6 +34,12 @@ namespace aws_service.Services
                 RegionEndpoint.USEast1);
         }
 
+        /// <summary>
+        /// Creates a new Public Hosted Zone for given domain
+        /// </summary>
+        /// <param name="domainName">The name of domain for which Hosted Zone is to be created</param>
+        /// <returns>The Id of created Hosted Zone</returns>
+        /// <exception cref="BadHttpRequestException">If AWS request produces an error</exception>
         public async Task<string> CreateHostedZone(string domainName)
         {
             _logger.LogInformation($"Creating Hosted Zone for {domainName}");

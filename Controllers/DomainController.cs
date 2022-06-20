@@ -20,6 +20,11 @@ public class DomainController : ControllerBase
         _domainAvailabilityService = domainAvailabilityService;
     }
 
+    /// <summary>
+    /// Check Availability of given domain name and get list of suggested domain names
+    /// </summary>
+    /// <param name="name">The domain name</param>
+    /// <returns></returns>
     [HttpGet]
     [Route("available/{name}")]
     public async Task<ActionResult<CheckAvailabilityResponse>> CheckAvailablity(string name)
@@ -27,6 +32,11 @@ public class DomainController : ControllerBase
         return Ok(await _domainAvailabilityService.CheckAvailablity(name));
     }
 
+    /// <summary>
+    /// Register a domain by given name
+    /// </summary>
+    /// <param name="name">The name of domain to register</param>
+    /// <returns></returns>
     [HttpPost]
     [Route("register/{name}")]
     public async Task<ActionResult<string>> RegisterDomain(string name)

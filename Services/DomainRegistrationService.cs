@@ -10,7 +10,20 @@ namespace aws_service.Services;
 
 public interface IDomainRegistrationService
 {
+    /// <summary>
+    /// Registers a new Domain on AWS Route53
+    /// </summary>
+    /// <param name="name">The name of domain to register</param>
+    /// <returns>The operation id of Domain Registration Request</returns>
+    /// <exception cref="BadHttpRequestException">If AWS request produces an error</exception>
     Task<string> RegisterDomain(string name);
+
+    /// <summary>
+    /// Get the <see cref="OperationStatus"/> of given OperationId
+    /// </summary>
+    /// <param name="operationId">The OperationId of Operation whose status is to be checked</param>
+    /// <returns><see cref="OperationStatus"/> as returned by AWS</returns>
+    /// <exception cref="BadHttpRequestException">If AWS request produces an error</exception>
     Task<OperationStatus> GetOperationStatus(string operationId);
 }
 
@@ -37,6 +50,12 @@ public class DomainRegistrationService : IDomainRegistrationService
             RegionEndpoint.USEast1);
     }
 
+    /// <summary>
+    /// Registers a new Domain on AWS Route53
+    /// </summary>
+    /// <param name="name">The name of domain to register</param>
+    /// <returns>The operation id of Domain Registration Request</returns>
+    /// <exception cref="BadHttpRequestException">If AWS request produces an error</exception>
     public async Task<string> RegisterDomain(string name)
     {
         _logger.LogInformation($"Requesting domain registration for ${name}");
@@ -60,12 +79,22 @@ public class DomainRegistrationService : IDomainRegistrationService
         return response.OperationId;
     }
 
+    /// <summary>
+    /// Get the <see cref="OperationStatus"/> of given OperationId
+    /// </summary>
+    /// <param name="operationId">The OperationId of Operation whose status is to be checked</param>
+    /// <returns><see cref="OperationStatus"/> as returned by AWS</returns>
+    /// <exception cref="BadHttpRequestException">If AWS request produces an error</exception>
     public async Task<OperationStatus> GetOperationStatus(string operationId)
     {
         var response = await _domainsClient.GetOperationDetailAsync(new GetOperationDetailRequest
         {
             OperationId = operationId
         });
+        if (response.HttpStatusCode != HttpStatusCode.OK)
+        {
+            throw new BadHttpRequestException($"Error occurred while checking OperationStatus of {operationId} with Status Code {response.HttpStatusCode}");
+        }
         return response.Status;
     }
 }
