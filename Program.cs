@@ -6,8 +6,6 @@ using Quartz;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
 builder.Services.AddTransient<IDomainService, DomainService>();
 
 builder.Services.AddControllers();
@@ -27,11 +25,10 @@ builder.Services.AddQuartz(q =>
                     .WithIdentity("operation-trigger")
                     .WithCronSchedule("0/5 * * ? * * *"));
 });
-builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
+//builder.Services.AddQuartzHostedService();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -39,9 +36,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();

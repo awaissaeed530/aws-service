@@ -20,17 +20,18 @@ namespace aws_service.BackgroundServices
         public async Task Execute(IJobExecutionContext context)
         {
             var operations = _dbContext.operations.ToList();
-            foreach (var operationId in operations)
+            foreach (var operation in operations)
             {
-                var operation = await _domainService.GetOperationDetails(operationId.OperationId);
-                if (operation == OperationStatus.IN_PROGRESS)
+                var status = await _domainService.GetOperationDetails(operation.OperationId);
+                if (status == OperationStatus.IN_PROGRESS)
                 {
-                    Console.WriteLine($"{operation.Value} is still in progress");
+                    Console.WriteLine($"{status.Value} is still in progress");
+                    await _domainService.RequestSSL(operation.DomainName);
                 }
                 else
                 {
-                    Console.WriteLine(operation.Value);
-                    _dbContext.operations.Remove(operationId);
+                    Console.WriteLine(status.Value);
+                    _dbContext.operations.Remove(operation);
                     await _dbContext.SaveChangesAsync();
                 }
             }

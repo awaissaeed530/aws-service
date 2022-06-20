@@ -16,6 +16,7 @@ public interface IDomainService
     Task<CheckAvailabilityResponse> CheckAvailablity(string name);
     Task<string> RegisterDomain(string name);
     Task<OperationStatus> GetOperationDetails(string operationId);
+    Task<string> RequestSSL(string domainName);
 }
 
 public class DomainService : IDomainService
@@ -107,6 +108,15 @@ public class DomainService : IDomainService
         return response.Status;
     }
 
+    public async Task<string> RequestSSL(string domainName)
+    {
+        var response = await _certificateManagerClient.RequestCertificateAsync(new RequestCertificateRequest
+        {
+            DomainName = domainName
+        });
+        return response.CertificateArn;
+    }
+
     private async Task<bool> GetDomainAvailability(string name)
     {
         var response = await _domainsClient.CheckDomainAvailabilityAsync(new CheckDomainAvailabilityRequest
@@ -167,14 +177,5 @@ public class DomainService : IDomainService
         });
         var domains = await Task.WhenAll(domainTasks);
         return domains.ToList();
-    }
-
-    private async Task<string> RequestSSL(string domainName)
-    {
-        var response = await _certificateManagerClient.RequestCertificateAsync(new RequestCertificateRequest
-        {
-            DomainName = domainName
-        });
-        return response.CertificateArn;
     }
 }
