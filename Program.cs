@@ -6,7 +6,8 @@ using Quartz;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddTransient<IDomainService, DomainService>();
+builder.Services.AddTransient<IDomainRegistrationService, DomainRegistrationService>();
+builder.Services.AddTransient<IDomainAvailabilityService, DomainAvailabilityService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

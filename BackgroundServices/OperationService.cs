@@ -8,13 +8,15 @@ namespace aws_service.BackgroundServices
     [DisallowConcurrentExecution]
     public class OperationService : IJob
     {
-        private readonly IDomainService _domainService;
+        private readonly IDomainRegistrationService _domainRegistrationsService;
         private readonly ApplicationDbContext _dbContext;
 
-        public OperationService(IDomainService domainService, ApplicationDbContext dbContext)
+        public OperationService(
+            ApplicationDbContext dbContext, 
+            IDomainRegistrationService domainRegistrationsService)
         {
-            _domainService = domainService;
             _dbContext = dbContext;
+            _domainRegistrationsService = domainRegistrationsService;
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -22,11 +24,11 @@ namespace aws_service.BackgroundServices
             var operations = _dbContext.operations.ToList();
             foreach (var operation in operations)
             {
-                var status = await _domainService.GetOperationDetails(operation.OperationId);
+                var status = await _domainRegistrationsService.GetOperationDetails(operation.OperationId);
                 if (status == OperationStatus.IN_PROGRESS)
                 {
                     Console.WriteLine($"{status.Value} is still in progress");
-                    await _domainService.RequestSSL(operation.DomainName);
+                    await _domainRegistrationsService.RequestSSL(operation.DomainName);
                 }
                 else
                 {

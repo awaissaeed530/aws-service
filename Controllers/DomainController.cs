@@ -9,24 +9,28 @@ namespace aws_service.Controllers;
 [Route("[controller]")]
 public class DomainController : ControllerBase
 {
-    private readonly IDomainService _domainService;
+    private readonly IDomainRegistrationService _domainRegistrationService;
+    private readonly IDomainAvailabilityService _domainAvailabilityService;
 
-    public DomainController(IDomainService domainService)
+    public DomainController(
+        IDomainRegistrationService domainRegistrationService, 
+        IDomainAvailabilityService domainAvailabilityService)
     {
-        _domainService = domainService;
+        _domainRegistrationService = domainRegistrationService;
+        _domainAvailabilityService = domainAvailabilityService;
     }
 
     [HttpGet]
     [Route("available/{name}")]
     public async Task<ActionResult<CheckAvailabilityResponse>> CheckAvailablity(string name)
     {
-        return Ok(await _domainService.CheckAvailablity(name));
+        return Ok(await _domainAvailabilityService.CheckAvailablity(name));
     }
 
     [HttpPost]
     [Route("register/{name}")]
     public async Task<ActionResult<string>> RegisterDomain(string name)
     {
-        return Ok(await _domainService.RegisterDomain(name));
+        return Ok(await _domainRegistrationService.RegisterDomain(name));
     }
 }
