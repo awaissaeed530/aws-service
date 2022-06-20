@@ -39,6 +39,7 @@ public class DomainRegistrationService : IDomainRegistrationService
 
     public async Task<string> RegisterDomain(string name)
     {
+        _logger.LogInformation($"Requesting domain registration for ${name}");
         var request = DomainConstants.RegisterDomainRequest;
         request.DomainName = name;
 

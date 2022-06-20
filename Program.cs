@@ -6,6 +6,10 @@ using Quartz;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
+builder.Services.AddTransient<ISSLService, SSLService>();
+builder.Services.AddTransient<IHostedZoneService, HostedZoneService>();
+builder.Services.AddTransient<IDomainRecordService, DomainRecordService>();
 builder.Services.AddTransient<IDomainRegistrationService, DomainRegistrationService>();
 builder.Services.AddTransient<IDomainAvailabilityService, DomainAvailabilityService>();
 
@@ -26,7 +30,7 @@ builder.Services.AddQuartz(q =>
                     .WithIdentity("operation-trigger")
                     .WithCronSchedule("0/5 * * ? * * *"));
 });
-//builder.Services.AddQuartzHostedService();
+builder.Services.AddQuartzHostedService();
 
 var app = builder.Build();
 

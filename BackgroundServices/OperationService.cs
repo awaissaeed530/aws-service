@@ -39,7 +39,7 @@ namespace aws_service.BackgroundServices
                 else if (status == OperationStatus.SUCCESSFUL)
                 {
                     _logger.LogInformation($"Domain '{operation.DomainName}' has been registered.");
-                    await _sslService.RequestSSL(operation.DomainName);
+                    await _sslService.CreateDomainSSL(operation.DomainName);
                 }
                 await UpdateOperationStatus(operation, status);
             }
