@@ -53,7 +53,7 @@ public class DomainRegistrationService : IDomainRegistrationService
         {
             OperationId = response.OperationId,
             DomainName = name,
-            Status = OperationStatus.SUBMITTED
+            Processed = false
         });
         await _dbContext.SaveChangesAsync();
 

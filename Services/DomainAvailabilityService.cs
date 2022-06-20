@@ -14,10 +14,10 @@ namespace aws_service.Services
 
     public class DomainAvailabilityService : IDomainAvailabilityService
     {
-        private readonly AmazonRoute53DomainsClient _domainsClient;
         private readonly InMemoryCacheClient _cache;
         private readonly IConfiguration _configuration;
         private readonly ILogger<DomainAvailabilityService> _logger;
+        private readonly AmazonRoute53DomainsClient _domainsClient;
 
         public DomainAvailabilityService(
             IConfiguration configuration,

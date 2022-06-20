@@ -40,21 +40,19 @@ namespace aws_service.BackgroundServices
                 {
                     _logger.LogInformation($"Domain '{operation.DomainName}' has been registered.");
                     await _sslService.CreateDomainSSL(operation.DomainName);
+                    await UpdateOperationStatus(operation, true);
                 }
-                await UpdateOperationStatus(operation, status);
             }
         }
 
         private List<Operation> GetPendingOperations()
         {
-            return _dbContext.operations
-                .Where((op) => op.Status == OperationStatus.SUBMITTED || op.Status == OperationStatus.IN_PROGRESS)
-                .ToList();
+            return _dbContext.operations.Where((op) => !op.Processed).ToList();
         }
 
-        private async Task UpdateOperationStatus(Operation operation, OperationStatus status)
+        private async Task UpdateOperationStatus(Operation operation, bool processed)
         {
-            operation.Status = status;
+            operation.Processed = processed;
             _dbContext.operations.Update(operation);
             await _dbContext.SaveChangesAsync();
         }
