@@ -3,6 +3,7 @@ using aws_service.Database;
 using aws_service.Services;
 using Microsoft.EntityFrameworkCore;
 using Quartz;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,11 +11,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddTransient<ISSLService, SSLService>();
 builder.Services.AddTransient<IHostedZoneService, HostedZoneService>();
 builder.Services.AddTransient<IDomainRecordService, DomainRecordService>();
+builder.Services.AddTransient<IOperationCrudService, OperationCrudService>();
 builder.Services.AddTransient<IDomainRegistrationService, DomainRegistrationService>();
 builder.Services.AddTransient<IDomainAvailabilityService, DomainAvailabilityService>();
 
 // Add Controllers Endpoints
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 // Add Swagger Documentation
 builder.Services.AddEndpointsApiExplorer();

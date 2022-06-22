@@ -6,10 +6,12 @@
     public class Entity
     {
         public string Id { get; set; }
+        public DateTime CreatedAt { get; set; }
 
         public Entity()
         {
             Id = Guid.NewGuid().ToString();
+            CreatedAt = DateTime.Now;
         }
     }
 }

@@ -9,13 +9,16 @@ namespace aws_service.Controllers;
 [Route("[controller]")]
 public class DomainController : ControllerBase
 {
+    private readonly IOperationCrudService _operationCrudService;
     private readonly IDomainRegistrationService _domainRegistrationService;
     private readonly IDomainAvailabilityService _domainAvailabilityService;
 
     public DomainController(
-        IDomainRegistrationService domainRegistrationService, 
+        IOperationCrudService operationCrudService,
+        IDomainRegistrationService domainRegistrationService,
         IDomainAvailabilityService domainAvailabilityService)
     {
+        _operationCrudService = operationCrudService;
         _domainRegistrationService = domainRegistrationService;
         _domainAvailabilityService = domainAvailabilityService;
     }
@@ -42,5 +45,12 @@ public class DomainController : ControllerBase
     public async Task<ActionResult<string>> RegisterDomain(string name)
     {
         return Ok(await _domainRegistrationService.RegisterDomain(name));
+    }
+
+    [HttpGet]
+    [Route("/")]
+    public ActionResult<List<Operation>> FindAll()
+    {
+        return Ok(_operationCrudService.GetAll());
     }
 }

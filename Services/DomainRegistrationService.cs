@@ -33,16 +33,16 @@ public class DomainRegistrationService : IDomainRegistrationService
     
     private readonly IConfiguration _configuration;
     private readonly ILogger<DomainRegistrationService> _logger;
-    private readonly ApplicationDbContext _dbContext;
+    private readonly IOperationCrudService _operationCrudService;
 
     public DomainRegistrationService(
         IConfiguration configuration,
         ILogger<DomainRegistrationService> logger,
-        ApplicationDbContext dbContext)
+        IOperationCrudService operationCrudService)
     {
-        _configuration = configuration;
         _logger = logger;
-        _dbContext = dbContext;
+        _configuration = configuration;
+        _operationCrudService = operationCrudService;
 
         _domainsClient = new AmazonRoute53DomainsClient(
             _configuration.GetValue<string>("Aws:Key"),
@@ -68,13 +68,13 @@ public class DomainRegistrationService : IDomainRegistrationService
             throw new BadHttpRequestException($"Error occurred while registering domain {name} with Status Code {response.HttpStatusCode}");
         }
         _logger.LogInformation($"Domain registration request for {name} has been sent with operationId ${response.OperationId}");
-        await _dbContext.operations.AddAsync(new Operation
+        await _operationCrudService.CreateAsync(new Operation
         {
             OperationId = response.OperationId,
             DomainName = name,
-            Processed = false
+            Processed = false,
+            Status = DomainOperationStatus.PENDING
         });
-        await _dbContext.SaveChangesAsync();
 
         return response.OperationId;
     }

@@ -1,6 +1,7 @@
 ﻿using Amazon;
 using Amazon.CertificateManager;
 using Amazon.CertificateManager.Model;
+using aws_service.Models;
 using System.Net;
 
 namespace aws_service.Services
@@ -12,7 +13,7 @@ namespace aws_service.Services
         /// </summary>
         /// <param name="domainName">The name of domain to associate SSL with</param>
         /// <returns></returns>
-        Task CreateDomainSSL(string domainName);
+        Task CreateDomainSSL(string domainName, string operationId);
     }
 
     public class SSLService : ISSLService
@@ -20,16 +21,19 @@ namespace aws_service.Services
         private readonly IConfiguration _configuration;
         private readonly ILogger<SSLService> _logger;
         private readonly IDomainRecordService _domainRecordService;
+        private readonly IOperationCrudService _operationCrudService;
         private readonly AmazonCertificateManagerClient _certificateManagerClient;
 
         public SSLService(
             IConfiguration configuration,
             ILogger<SSLService> logger,
-            IDomainRecordService domainRecordService)
+            IDomainRecordService domainRecordService,
+            IOperationCrudService operationCrudService)
         {
-            _configuration = configuration;
             _logger = logger;
+            _configuration = configuration;
             _domainRecordService = domainRecordService;
+            _operationCrudService = operationCrudService;
 
             _certificateManagerClient = new AmazonCertificateManagerClient(
                 _configuration.GetValue<string>("Aws:Key"),
@@ -42,14 +46,28 @@ namespace aws_service.Services
         /// </summary>
         /// <param name="domainName">The name of domain to associate SSL with</param>
         /// <returns></returns>
-        public async Task CreateDomainSSL(string domainName)
+        public async Task CreateDomainSSL(string domainName, string operationId)
         {
-            _logger.LogInformation($"Requesting SSL Certificate for {domainName}.");
-            var certificateArn = await RequestSSL(domainName);
-            var certificateDetails = await DescribeSSL(certificateArn);
+            _logger.LogInformation($"Requesting SSL Certificate for {domainName} with operationId {operationId}");
+            var operation = _operationCrudService.GetById(operationId);
+            try
+            {
+                var certificateArn = await RequestSSL(domainName);
+                var certificateDetails = await DescribeSSL(certificateArn);
 
-            var resouceRecord = certificateDetails.DomainValidationOptions[0].ResourceRecord;
-            await _domainRecordService.CreateCertificateRecords(resouceRecord, domainName);
+                var resouceRecord = certificateDetails.DomainValidationOptions[0].ResourceRecord;
+                await _domainRecordService.CreateCertificateRecords(resouceRecord, domainName);
+
+                operation.Status = DomainOperationStatus.SSL_ACTIVATED;
+            }
+            catch (Exception)
+            {
+                operation.Status = DomainOperationStatus.SSL_ACTIVATION_FAILED;
+            }
+            finally
+            {
+                await _operationCrudService.UpdateAsync(operation);
+            }
         }
 
         /// <summary>
