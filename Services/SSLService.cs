@@ -68,11 +68,11 @@ namespace aws_service.Services
             {
                 _logger.LogError($"An error occureed while creating SSL for {domainName}");
                 _logger.LogError(e.Message);
-                //operation.Status = DomainOperationStatus.SSL_ACTIVATION_FAILED;
+                operation.Status = DomainOperationStatus.SSL_ACTIVATION_FAILED;
             }
             finally
             {
-                //await _operationCrudService.UpdateAsync(operation);
+                await _operationCrudService.UpdateAsync(operation);
             }
         }
 
