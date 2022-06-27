@@ -13,7 +13,7 @@ namespace aws_service.Services
         /// Check availability of given domain name and get a list of suggested domains
         /// </summary>
         /// <param name="name">The domain name to check availability of</param>
-        /// <returns></returns>
+        /// <returns>An instance of <see cref="CheckAvailabilityResponse"/></returns>
         Task<CheckAvailabilityResponse> CheckAvailablity(string name);
     }
 
@@ -39,6 +39,7 @@ namespace aws_service.Services
                 RegionEndpoint.USEast1);
         }
 
+        /// <inheritdoc/>
         public async Task<CheckAvailabilityResponse> CheckAvailablity(string name)
         {
             string? tld;
@@ -71,7 +72,7 @@ namespace aws_service.Services
         /// Gets the availability status of a domain from AWS
         /// </summary>
         /// <param name="name">The domain name to check availability of</param>
-        /// <returns>True if domain is available</returns>
+        /// <returns>True if domain is available and vice versa</returns>
         /// <exception cref="BadHttpRequestException">If AWS request produces an error</exception>
         private async Task<bool> GetDomainAvailability(string name)
         {

@@ -41,11 +41,7 @@ namespace aws_service.Services
                 RegionEndpoint.USEast1);
         }
 
-        /// <summary>
-        /// Create and associte a SSL certificate with given Route53 domain
-        /// </summary>
-        /// <param name="domainName">The name of domain to associate SSL with</param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public async Task CreateDomainSSL(string domainName, string operationId)
         {
             _logger.LogInformation($"Requesting SSL Certificate for {domainName} with operationId {operationId}");

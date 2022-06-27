@@ -16,6 +16,14 @@ namespace aws_service.Services
         /// <returns></returns>
         /// <exception cref="BadHttpRequestException">If AWS request produces an error</exception>
         Task CreateCertificateRecords(CertificateResourceRecord record, string domainName);
+
+        /// <summary>
+        /// Adds A name records to given Hosted Zone to associate an EC2 instance with that domain
+        /// </summary>
+        /// <param name="ipAddress">Public IP Address of EC2 instance</param>
+        /// <param name="hostedZoneId">Id of Hosted Zone where records will be added</param>
+        /// <param name="domainName">Name of Hosted Zone</param>
+        /// <returns></returns>
         Task CreateEC2Records(string ipAddress, string hostedZoneId, string domainName);
     }
 
@@ -41,13 +49,7 @@ namespace aws_service.Services
                 RegionEndpoint.USEast1);
         }
 
-        /// <summary>
-        /// Adds given CNAME records to a Registed Route53 Domain
-        /// </summary>
-        /// <param name="record"><see cref="CertificateResourceRecord"/> to add to Domain</param>
-        /// <param name="domainName">The domain name where records will be added</param>
-        /// <returns></returns>
-        /// <exception cref="BadHttpRequestException">If AWS request produces an error</exception>
+        /// <inheritdoc/>
         public async Task CreateCertificateRecords(CertificateResourceRecord record, string domainName)
         {
             _logger.LogInformation($"Adding SSL Certificate records to {domainName}");
@@ -90,6 +92,7 @@ namespace aws_service.Services
             _logger.LogInformation($"CNAME records of SSL Certificate have been added for {domainName}");
         }
 
+        /// <inheritdoc/>
         public async Task CreateEC2Records(string ipAddress, string hostedZoneId, string domainName)
         {
             _logger.LogInformation($"Adding EC2 records to hosted zone {hostedZoneId}");

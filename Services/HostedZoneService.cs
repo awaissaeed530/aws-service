@@ -13,6 +13,13 @@ namespace aws_service.Services
         /// <returns>The Id of created Hosted Zone</returns>
         /// <exception cref="BadHttpRequestException">If AWS request produces an error</exception>
         Task<string> CreateHostedZone(string domainName);
+
+        /// <summary>
+        /// Find Hosted Zone by name
+        /// </summary>
+        /// <param name="domainName">The name of Hosted Zone</param>
+        /// <returns>An instance of <see cref="HostedZone"/></returns>
+        /// <exception cref="BadHttpRequestException">If AWS request produces an error</exception>
         Task<HostedZone> GetHostedZoneByName(string domainName);
     }
 
@@ -35,12 +42,7 @@ namespace aws_service.Services
                 RegionEndpoint.USEast1);
         }
 
-        /// <summary>
-        /// Creates a new Public Hosted Zone for given domain
-        /// </summary>
-        /// <param name="domainName">The name of domain for which Hosted Zone is to be created</param>
-        /// <returns>The Id of created Hosted Zone</returns>
-        /// <exception cref="BadHttpRequestException">If AWS request produces an error</exception>
+        /// <inheritdoc/>
         public async Task<string> CreateHostedZone(string domainName)
         {
             _logger.LogInformation($"Creating Hosted Zone for {domainName}");
@@ -62,6 +64,7 @@ namespace aws_service.Services
             return response.HostedZone.Id;
         }
 
+        /// <inheritdoc/>
         public async Task<HostedZone> GetHostedZoneByName(string domainName)
         {
             var response = await _route53Client.ListHostedZonesByNameAsync(new ListHostedZonesByNameRequest

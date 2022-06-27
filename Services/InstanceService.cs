@@ -6,6 +6,12 @@ using System.Net;
 namespace aws_service.Services
 {
     public interface IInstanceService {
+        /// <summary>
+        /// Associates given domain with an EC2 instance
+        /// </summary>
+        /// <param name="domainName">The name of domain</param>
+        /// <param name="instanceId">Id of EC2 instance</param>
+        /// <returns></returns>
         Task MapInstanceWithDomain(string domainName, string instanceId);
     }
 
@@ -34,6 +40,7 @@ namespace aws_service.Services
                 RegionEndpoint.USEast1);
         }
 
+        /// <inheritdoc/>
         public async Task MapInstanceWithDomain(string domainName, string instanceId)
         {
             var instance = await DescribeInstance(instanceId);
@@ -42,6 +49,12 @@ namespace aws_service.Services
             await _domainRecordService.CreateEC2Records(instance.PublicIpAddress, hostedZone.Id, domainName);
         }
 
+        /// <summary>
+        /// Get the details of an EC2 instance from AWS
+        /// </summary>
+        /// <param name="instanceId">Id of EC2 instance</param>
+        /// <returns>An instance of <see cref="Instance"/> class</returns>
+        /// <exception cref="BadHttpRequestException"></exception>
         private async Task<Instance> DescribeInstance(string instanceId)
         {
             var response = await _ec2Client.DescribeInstancesAsync(new DescribeInstancesRequest

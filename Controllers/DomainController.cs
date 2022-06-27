@@ -1,4 +1,3 @@
-using Amazon.Route53Domains.Model;
 using aws_service.Models;
 using aws_service.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -9,21 +8,21 @@ namespace aws_service.Controllers;
 [Route("[controller]")]
 public class DomainController : ControllerBase
 {
+    private readonly IInstanceService _instanceService;
     private readonly IOperationCrudService _operationCrudService;
     private readonly IDomainRegistrationService _domainRegistrationService;
     private readonly IDomainAvailabilityService _domainAvailabilityService;
-    private readonly IInstanceService _instanceService;
 
     public DomainController(
+        IInstanceService instanceService,
         IOperationCrudService operationCrudService,
         IDomainRegistrationService domainRegistrationService,
-        IDomainAvailabilityService domainAvailabilityService,
-        IInstanceService instanceService)
+        IDomainAvailabilityService domainAvailabilityService)
     {
+        _instanceService = instanceService;
         _operationCrudService = operationCrudService;
         _domainRegistrationService = domainRegistrationService;
         _domainAvailabilityService = domainAvailabilityService;
-        _instanceService = instanceService;
     }
 
     /// <summary>

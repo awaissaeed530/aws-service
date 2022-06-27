@@ -27,7 +27,6 @@ namespace aws_service.Constants
     /// </summary>
     public static class ContactConstant
     {
-        // TODO: Please update this information
         public static ContactDetail Contact => new ContactDetail
         {
             AddressLine1 = "Carrera 41 No. .57 Sur 01",
