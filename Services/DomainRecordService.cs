@@ -15,7 +15,7 @@ namespace aws_service.Services
         /// <param name="domainName">The domain name where records will be added</param>
         /// <returns></returns>
         /// <exception cref="BadHttpRequestException">If AWS request produces an error</exception>
-        Task CreateCertificateRecords(CertificateResourceRecord record, string domainName);
+        Task CreateCertificateRecords(CertificateResourceRecord record, string hostedZoneIdstring, string domainName);
 
         /// <summary>
         /// Adds A name records to given Hosted Zone to associate an EC2 instance with that domain
@@ -50,10 +50,9 @@ namespace aws_service.Services
         }
 
         /// <inheritdoc/>
-        public async Task CreateCertificateRecords(CertificateResourceRecord record, string domainName)
+        public async Task CreateCertificateRecords(CertificateResourceRecord record, string hostedZoneId, string domainName)
         {
             _logger.LogInformation($"Adding SSL Certificate records to {domainName}");
-            var hostedZoneId = await _hostedZoneService.CreateHostedZone(domainName);
 
             var request = new ChangeResourceRecordSetsRequest
             {

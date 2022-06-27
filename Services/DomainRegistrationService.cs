@@ -3,7 +3,6 @@ using Amazon.Route53Domains;
 using Amazon.Route53Domains.Model;
 using aws_service.Models;
 using aws_service.Constants;
-using aws_service.Database;
 using System.Net;
 
 namespace aws_service.Services;

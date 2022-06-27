@@ -18,20 +18,23 @@ namespace aws_service.Services
 
     public class SSLService : ISSLService
     {
-        private readonly IConfiguration _configuration;
         private readonly ILogger<SSLService> _logger;
+        private readonly IConfiguration _configuration;
+        private readonly IHostedZoneService _hostedZoneService;
         private readonly IDomainRecordService _domainRecordService;
         private readonly IOperationCrudService _operationCrudService;
         private readonly AmazonCertificateManagerClient _certificateManagerClient;
 
         public SSLService(
-            IConfiguration configuration,
             ILogger<SSLService> logger,
+            IConfiguration configuration,
+            IHostedZoneService hostedZoneService,
             IDomainRecordService domainRecordService,
             IOperationCrudService operationCrudService)
         {
             _logger = logger;
             _configuration = configuration;
+            _hostedZoneService = hostedZoneService;
             _domainRecordService = domainRecordService;
             _operationCrudService = operationCrudService;
 
@@ -60,7 +63,8 @@ namespace aws_service.Services
                 }
 
                 var resouceRecord = certificateDetails.DomainValidationOptions[0].ResourceRecord;
-                await _domainRecordService.CreateCertificateRecords(resouceRecord, domainName);
+                var hostedZone = await _hostedZoneService.GetHostedZoneByName(domainName);
+                await _domainRecordService.CreateCertificateRecords(resouceRecord, hostedZone.Id, domainName);
 
                 operation.Status = DomainOperationStatus.SSL_ACTIVATED;
             }
