@@ -46,6 +46,7 @@ namespace aws_service.Services
             var request = new CreateHostedZoneRequest
             {
                 Name = domainName,
+                CallerReference = Guid.NewGuid().ToString(),
                 HostedZoneConfig = new HostedZoneConfig
                 {
                     PrivateZone = false,
@@ -53,7 +54,7 @@ namespace aws_service.Services
             };
 
             var response = await _route53Client.CreateHostedZoneAsync(request);
-            if (response.HttpStatusCode != HttpStatusCode.OK)
+            if (response.HttpStatusCode != HttpStatusCode.Created && response.HttpStatusCode != HttpStatusCode.OK)
             {
                 throw new BadHttpRequestException($"Error occurred while creating Hosted Zone for {domainName} with Status Code {response.HttpStatusCode}");
             }

@@ -53,20 +53,30 @@ namespace aws_service.Services
             try
             {
                 var certificateArn = await RequestSSL(domainName);
-                var certificateDetails = await DescribeSSL(certificateArn);
+                CertificateDetail certificateDetails = new();
+
+                // AWS Takes some time to associate records, so wait for them to be allocated
+                while (certificateDetails.DomainValidationOptions.Count == 0 
+                    || certificateDetails.DomainValidationOptions[0].ResourceRecord == null)
+                {
+                    Thread.Sleep(2000);
+                    certificateDetails = await DescribeSSL(certificateArn);
+                }
 
                 var resouceRecord = certificateDetails.DomainValidationOptions[0].ResourceRecord;
                 await _domainRecordService.CreateCertificateRecords(resouceRecord, domainName);
 
                 operation.Status = DomainOperationStatus.SSL_ACTIVATED;
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                operation.Status = DomainOperationStatus.SSL_ACTIVATION_FAILED;
+                _logger.LogError($"An error occureed while creating SSL for {domainName}");
+                _logger.LogError(e.Message);
+                //operation.Status = DomainOperationStatus.SSL_ACTIVATION_FAILED;
             }
             finally
             {
-                await _operationCrudService.UpdateAsync(operation);
+                //await _operationCrudService.UpdateAsync(operation);
             }
         }
 

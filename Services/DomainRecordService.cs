@@ -65,6 +65,7 @@ namespace aws_service.Services
                             {
                                 Name = record.Name,
                                 Type = RRType.CNAME,
+                                TTL = 300,
                                 ResourceRecords = new List<ResourceRecord>
                                 {
                                     new ResourceRecord
