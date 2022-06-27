@@ -13,6 +13,7 @@ namespace aws_service.Services
         /// <returns>The Id of created Hosted Zone</returns>
         /// <exception cref="BadHttpRequestException">If AWS request produces an error</exception>
         Task<string> CreateHostedZone(string domainName);
+        Task<HostedZone> GetHostedZoneByName(string domainName);
     }
 
     public class HostedZoneService : IHostedZoneService
@@ -59,6 +60,25 @@ namespace aws_service.Services
                 throw new BadHttpRequestException($"Error occurred while creating Hosted Zone for {domainName} with Status Code {response.HttpStatusCode}");
             }
             return response.HostedZone.Id;
+        }
+
+        public async Task<HostedZone> GetHostedZoneByName(string domainName)
+        {
+            var response = await _route53Client.ListHostedZonesByNameAsync(new ListHostedZonesByNameRequest
+            {
+                DNSName = domainName,
+                MaxItems = "1"
+            });
+            if (response.HttpStatusCode != HttpStatusCode.OK)
+            {
+                throw new BadHttpRequestException($"Error occurred while fetching Hosted Zone for {domainName} with Status Code {response.HttpStatusCode}");
+            }
+            var hostedZone = response.HostedZones.FirstOrDefault();
+            if (hostedZone == null)
+            {
+                throw new BadHttpRequestException($"Hosted Zone with name {domainName} does not exist.", 404);
+            }
+            return hostedZone;
         }
     }
 }

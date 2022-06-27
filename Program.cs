@@ -9,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add Services to IOC
 builder.Services.AddTransient<ISSLService, SSLService>();
+builder.Services.AddTransient<IInstanceService, InstanceService>();
 builder.Services.AddTransient<IHostedZoneService, HostedZoneService>();
 builder.Services.AddTransient<IDomainRecordService, DomainRecordService>();
 builder.Services.AddTransient<IOperationCrudService, OperationCrudService>();

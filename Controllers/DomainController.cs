@@ -12,15 +12,18 @@ public class DomainController : ControllerBase
     private readonly IOperationCrudService _operationCrudService;
     private readonly IDomainRegistrationService _domainRegistrationService;
     private readonly IDomainAvailabilityService _domainAvailabilityService;
+    private readonly IInstanceService _instanceService;
 
     public DomainController(
         IOperationCrudService operationCrudService,
         IDomainRegistrationService domainRegistrationService,
-        IDomainAvailabilityService domainAvailabilityService)
+        IDomainAvailabilityService domainAvailabilityService,
+        IInstanceService instanceService)
     {
         _operationCrudService = operationCrudService;
         _domainRegistrationService = domainRegistrationService;
         _domainAvailabilityService = domainAvailabilityService;
+        _instanceService = instanceService;
     }
 
     /// <summary>
@@ -52,5 +55,13 @@ public class DomainController : ControllerBase
     public ActionResult<List<Operation>> FindAll()
     {
         return Ok(_operationCrudService.GetAll());
+    }
+
+    [HttpPost]
+    [Route("ec2/{domainName}/{instanceId}")]
+    public async Task<ActionResult> MapInstanceWithDomain(string domainName, string instanceId)
+    {
+        await _instanceService.MapInstanceWithDomain(domainName, instanceId);
+        return Ok();
     }
 }
