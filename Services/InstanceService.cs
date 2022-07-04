@@ -55,8 +55,9 @@ namespace aws_service.Services
             var operation = _dbContext.operations
                 .Where((op) => op.Status == DomainOperationStatus.SSL_ACTIVATED && op.DomainName == domainName)
                 .FirstOrDefault()!;
-            _logger.LogInformation($"SSL Certificate with ARN ${operation.CertificateArn} will be used");
-            await _loadBalancerService.ConfigureHTTPSTraffic(instance, domainName, operation.CertificateArn!, hostedZone.Id);
+            _logger.LogInformation($"SSL Certificate with ARN ${"arn:aws:acm:us-east-1:434783347951:certificate/d5672749-54a5-42ef-a5dd-1abd274e7857"} will be used");
+            await _loadBalancerService.ConfigureHTTPSTraffic(instance, domainName, "arn:aws:acm:us-east-1:434783347951:certificate/d5672749-54a5-42ef-a5dd-1abd274e7857", hostedZone.Id);
+            _logger.LogInformation($"{domainName} has been associated with EC2 instance {instanceId}");
         }
 
         /// <summary>

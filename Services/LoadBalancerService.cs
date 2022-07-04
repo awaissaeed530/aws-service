@@ -54,6 +54,7 @@ namespace aws_service.Services
             await CreateLoadBalancerListener(true, loadBalancer.LoadBalancerArn, certificateArn, targetGroup.TargetGroupArn);
             await CreateLoadBalancerListener(false, loadBalancer.LoadBalancerArn, certificateArn, targetGroup.TargetGroupArn);
             await _domainRecordService.CreateLoadBalanceRecords(loadBalancer, hostedZoneId, domainName);
+            _logger.LogInformation($"Load Balancer has been configured for instance {instance.InstanceId} with Domain ${domainName}");
         }
 
         /// <summary>
