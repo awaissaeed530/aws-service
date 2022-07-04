@@ -1,4 +1,5 @@
 ﻿using Amazon;
+using Amazon.ElasticLoadBalancingV2.Model;
 using Amazon.Route53;
 using Amazon.Route53.Model;
 using System.Net;
@@ -16,15 +17,7 @@ namespace aws_service.Services
         /// <returns></returns>
         /// <exception cref="BadHttpRequestException">If AWS request produces an error</exception>
         Task CreateCertificateRecords(CertificateResourceRecord record, string hostedZoneIdstring, string domainName);
-
-        /// <summary>
-        /// Adds A name records to given Hosted Zone to associate an EC2 instance with that domain
-        /// </summary>
-        /// <param name="ipAddress">Public IP Address of EC2 instance</param>
-        /// <param name="hostedZoneId">Id of Hosted Zone where records will be added</param>
-        /// <param name="domainName">Name of Hosted Zone</param>
-        /// <returns></returns>
-        Task CreateEC2Records(string ipAddress, string hostedZoneId, string domainName);
+        Task CreateLoadBalanceRecords(LoadBalancer loadBalancer, string hostedZoneId, string domainName);
     }
 
     public class DomainRecordService : IDomainRecordService
@@ -91,46 +84,89 @@ namespace aws_service.Services
             _logger.LogInformation($"CNAME records of SSL Certificate have been added for {domainName}");
         }
 
-        /// <inheritdoc/>
-        public async Task CreateEC2Records(string ipAddress, string hostedZoneId, string domainName)
+        public async Task CreateLoadBalanceRecords(LoadBalancer loadBalancer, string hostedZoneId, string domainName)
         {
-            _logger.LogInformation($"Adding EC2 records to hosted zone {hostedZoneId}");
+            _logger.LogInformation($"Adding Load Balancer records to hosted zone {hostedZoneId}");
+            var records = await GetResourceRecords(hostedZoneId);
+            var recordAType = records.Where((record) => record.Type == RRType.A).FirstOrDefault();
+            var recordAAAAType = records.Where((record) => record.Type == RRType.AAAA).FirstOrDefault();
 
             var request = new ChangeResourceRecordSetsRequest
             {
                 ChangeBatch = new ChangeBatch
                 {
-                    Changes = new List<Change>
-                    {
-                        new Change
-                        {
-                            Action = ChangeAction.CREATE,
-                            ResourceRecordSet = new ResourceRecordSet
-                            {
-                                Name = domainName,
-                                Type = RRType.A,
-                                TTL = 300,
-                                ResourceRecords = new List<ResourceRecord>
-                                {
-                                    new ResourceRecord
-                                    {
-                                        Value = ipAddress
-                                    }
-                                }
-                            }
-                        }
-                    },
+                    Changes = new List<Change>(),
                     Comment = "These changes add EC2 instance records"
                 },
                 HostedZoneId = hostedZoneId
             };
+            if (recordAType != null)
+            {
+                request.ChangeBatch.Changes.Add(new Change
+                {
+                    Action = ChangeAction.DELETE,
+                    ResourceRecordSet = recordAType
+                });
+            }
+            if (recordAAAAType != null)
+            {
+                request.ChangeBatch.Changes.Add(new Change
+                {
+                    Action = ChangeAction.DELETE,
+                    ResourceRecordSet = recordAType
+                });
+            }
+            request.ChangeBatch.Changes.AddRange(new List<Change>
+            {
+                new Change
+                {
+                    Action = ChangeAction.CREATE,
+                    ResourceRecordSet = new ResourceRecordSet
+                    {
+                        Name = domainName,
+                        Type = RRType.A,
+                        AliasTarget = new AliasTarget{
+                            DNSName = loadBalancer.DNSName,
+                            HostedZoneId = loadBalancer.CanonicalHostedZoneId,
+                            EvaluateTargetHealth = true
+                        }
+                    }
+                },
+                new Change
+                {
+                    Action = ChangeAction.CREATE,
+                    ResourceRecordSet = new ResourceRecordSet
+                    {
+                        Name = domainName,
+                        Type = RRType.AAAA,
+                        AliasTarget = new AliasTarget{
+                            DNSName = loadBalancer.DNSName,
+                            HostedZoneId = loadBalancer.CanonicalHostedZoneId,
+                            EvaluateTargetHealth = true
+                        }
+                    }
+                }
+            });
 
             var response = await _route53Client.ChangeResourceRecordSetsAsync(request);
             if (response.HttpStatusCode != HttpStatusCode.OK)
             {
-                throw new BadHttpRequestException($"Error occurred while creating A Records of EC2 instance in Hosted Zone {hostedZoneId} with Status Code {response.HttpStatusCode}");
+                throw new BadHttpRequestException($"Error occurred while creating Records of Load Balancer in Hosted Zone {hostedZoneId} for {domainName} with Status Code {response.HttpStatusCode}");
             }
-            _logger.LogInformation($"A records of EC2 instance have been added in Hosted Zone {hostedZoneId}");
+            _logger.LogInformation($"A records of Load Balancer have been added in Hosted Zone {hostedZoneId}");
+        }
+
+        private async Task<List<ResourceRecordSet>> GetResourceRecords(string hostedZoneId)
+        {
+            var response = await _route53Client.ListResourceRecordSetsAsync(new ListResourceRecordSetsRequest
+            {
+                HostedZoneId = hostedZoneId
+            });
+            if (response.HttpStatusCode != HttpStatusCode.OK)
+            {
+                throw new BadHttpRequestException($"Error occurred while fetching Resource Records for Hosted Zone {hostedZoneId} with Status Code {response.HttpStatusCode}");
+            }
+            return response.ResourceRecordSets;
         }
     }
 }

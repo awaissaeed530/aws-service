@@ -9,6 +9,7 @@
         public string DomainName { get; set; }
         public bool Processed { get; set; }
         public DomainOperationStatus Status { get; set; }
+        public string? CertificateArn { get; set; }
     }
 
     public enum DomainOperationStatus

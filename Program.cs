@@ -11,10 +11,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddTransient<ISSLService, SSLService>();
 builder.Services.AddTransient<IInstanceService, InstanceService>();
 builder.Services.AddTransient<IHostedZoneService, HostedZoneService>();
+builder.Services.AddTransient<ILoadBalancerService, LoadBalancerService>();
 builder.Services.AddTransient<IDomainRecordService, DomainRecordService>();
 builder.Services.AddTransient<IOperationCrudService, OperationCrudService>();
 builder.Services.AddTransient<IDomainRegistrationService, DomainRegistrationService>();
 builder.Services.AddTransient<IDomainAvailabilityService, DomainAvailabilityService>();
+builder.Services.AddTransient<IEC2Service, EC2Service>();
 
 // Add Controllers Endpoints
 builder.Services.AddControllers()

@@ -1,11 +1,14 @@
 ﻿using Amazon;
 using Amazon.EC2;
 using Amazon.EC2.Model;
+using aws_service.Database;
+using aws_service.Models;
 using System.Net;
 
 namespace aws_service.Services
 {
-    public interface IInstanceService {
+    public interface IInstanceService
+    {
         /// <summary>
         /// Associates given domain with an EC2 instance
         /// </summary>
@@ -21,18 +24,21 @@ namespace aws_service.Services
         private readonly IConfiguration _configuration;
         private readonly ILogger<InstanceService> _logger;
         private readonly IHostedZoneService _hostedZoneService;
-        private readonly IDomainRecordService _domainRecordService;
+        private readonly ILoadBalancerService _loadBalancerService;
+        private readonly ApplicationDbContext _dbContext;
 
         public InstanceService(
             IConfiguration configuration,
             ILogger<InstanceService> logger,
             IHostedZoneService hostedZoneService,
-            IDomainRecordService domainRecordService)
+            ILoadBalancerService loadBalancerService,
+            ApplicationDbContext dbContext)
         {
             _logger = logger;
+            _dbContext = dbContext;
             _configuration = configuration;
             _hostedZoneService = hostedZoneService;
-            _domainRecordService = domainRecordService;
+            _loadBalancerService = loadBalancerService;
 
             _ec2Client = new AmazonEC2Client(
                 _configuration.GetValue<string>("Aws:Key"),
@@ -45,8 +51,10 @@ namespace aws_service.Services
         {
             var instance = await DescribeInstance(instanceId);
             var hostedZone = await _hostedZoneService.GetHostedZoneByName(domainName);
-
-            await _domainRecordService.CreateEC2Records(instance.PublicIpAddress, hostedZone.Id, domainName);
+            var operation = _dbContext.operations
+                .Where((op) => op.Status == DomainOperationStatus.SSL_ACTIVATED && op.DomainName == domainName)
+                .FirstOrDefault();
+            await _loadBalancerService.ConfigureHTTPSTraffic(instance, domainName, "arn:aws:acm:us-east-1:434783347951:certificate/d5672749-54a5-42ef-a5dd-1abd274e7857", hostedZone.Id);
         }
 
         /// <summary>
@@ -79,5 +87,6 @@ namespace aws_service.Services
             };
             throw new BadHttpRequestException($"EC2 Instance with InstanceId {instanceId} does not exist.", 404);
         }
+
     }
 }

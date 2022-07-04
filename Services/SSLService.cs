@@ -67,6 +67,7 @@ namespace aws_service.Services
                 await _domainRecordService.CreateCertificateRecords(resouceRecord, hostedZone.Id, domainName);
 
                 operation.Status = DomainOperationStatus.SSL_ACTIVATED;
+                operation.CertificateArn = certificateArn;
             }
             catch (Exception e)
             {
