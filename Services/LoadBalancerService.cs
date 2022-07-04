@@ -8,6 +8,14 @@ using Instance = Amazon.EC2.Model.Instance;
 namespace aws_service.Services
 {
     public interface ILoadBalancerService {
+        /// <summary>
+        /// Create and Configure a Load Balancer for given EC2 instance
+        /// </summary>
+        /// <param name="instance">EC2 <see cref="Instance"/> object whose Load Balance will be configured</param>
+        /// <param name="domainName">Name of domain to associate with Load Balancer </param>
+        /// <param name="certificateArn">ARN of ACM SSL Certificate which will be associated with HTTPS rule</param>
+        /// <param name="hostedZoneId">Id of hosted where Load Balancer records will be added</param>
+        /// <returns></returns>
         Task ConfigureHTTPSTraffic(Instance instance, string domainName, string certificateArn, string hostedZoneId);
     }
 
@@ -36,18 +44,27 @@ namespace aws_service.Services
             _ec2Service = ec2Service;
         }
 
+        /// <inheritdoc/>
         public async Task ConfigureHTTPSTraffic(Instance instance, string domainName, string certificateArn, string hostedZoneId)
         {
+            _logger.LogInformation($"Configuring Load Balancer for instance {instance.InstanceId} with Domain ${domainName}, Certificate ARN {certificateArn}, Hosted Zone ${hostedZoneId}");
             var targetGroup = await CreateTargetGroup(domainName);
             await RegisterInstanceTargets(targetGroup.TargetGroupArn, instance.InstanceId);
             var loadBalancer = await CreateLoadBalancer(domainName, instance.SecurityGroups.FirstOrDefault()!.GroupId);
-            await CreateLoadBalancerListeners(true, loadBalancer.LoadBalancerArn, certificateArn, targetGroup.TargetGroupArn);
-            await CreateLoadBalancerListeners(false, loadBalancer.LoadBalancerArn, certificateArn, targetGroup.TargetGroupArn);
+            await CreateLoadBalancerListener(true, loadBalancer.LoadBalancerArn, certificateArn, targetGroup.TargetGroupArn);
+            await CreateLoadBalancerListener(false, loadBalancer.LoadBalancerArn, certificateArn, targetGroup.TargetGroupArn);
             await _domainRecordService.CreateLoadBalanceRecords(loadBalancer, hostedZoneId, domainName);
         }
 
+        /// <summary>
+        /// Create Target Group with given domain name appending tg
+        /// </summary>
+        /// <param name="domainName">The domain of name to use as Target Group name</param>
+        /// <returns>An instance of <see cref="TargetGroup"/></returns>
+        /// <exception cref="BadHttpRequestException"></exception>
         private async Task<TargetGroup> CreateTargetGroup(string domainName)
         {
+            _logger.LogInformation($"Creating Target Group for ${domainName}");
             var defaultVPC = await _ec2Service.GetDefaultVPC();
             var response = await _elbClient.CreateTargetGroupAsync(new CreateTargetGroupRequest
             {
@@ -60,11 +77,21 @@ namespace aws_service.Services
             {
                 throw new BadHttpRequestException($"Error occurred while creating Target Group for {domainName} with Status Code {response.HttpStatusCode}");
             }
-            return response.TargetGroups.FirstOrDefault()!;
+            var targetGroup = response.TargetGroups.FirstOrDefault()!;
+            _logger.LogInformation($"Target Group for {domainName} has been created with Name ${targetGroup.TargetGroupName}");
+            return targetGroup;
         }
 
+        /// <summary>
+        /// Register Instance Targets for given Target Group Arn pointing to given Instance Id
+        /// </summary>
+        /// <param name="targetGroupArn">ARN of Target Group where Instance Target will be addd</param>
+        /// <param name="instanceId">Id of EC2 instance to register targets for</param>
+        /// <returns></returns>
+        /// <exception cref="BadHttpRequestException"></exception>
         private async Task RegisterInstanceTargets(string targetGroupArn, string instanceId)
         {
+            _logger.LogInformation($"Registering Instance Target of Target Group {targetGroupArn} for instance {instanceId}");
             var response = await _elbClient.RegisterTargetsAsync(new RegisterTargetsRequest
             {
                 TargetGroupArn = targetGroupArn,
@@ -81,10 +108,19 @@ namespace aws_service.Services
             {
                 throw new BadHttpRequestException($"Error occurred while registering Targets for Target Group {targetGroupArn} and Instance {instanceId} with Status Code {response.HttpStatusCode}");
             }
+            _logger.LogInformation($"Instance Target of Target Group {targetGroupArn} has been added for instance {instanceId}");
         }
 
+        /// <summary>
+        /// Create a new Load Balancer for given domain using given securityGroupId 
+        /// </summary>
+        /// <param name="domainName">The name of domain whose Load Balancer will be created</param>
+        /// <param name="securityGroupId">Id of Security Group to point to in Load Balance</param>
+        /// <returns></returns>
+        /// <exception cref="BadHttpRequestException"></exception>
         private async Task<LoadBalancer> CreateLoadBalancer(string domainName, string securityGroupId)
         {
+            _logger.LogInformation($"Creating Load Balance for ${domainName} with Security Group {securityGroupId}");
             var defaultSubnets = await _ec2Service.GetDefaultSubnets();
             var response = await _elbClient.CreateLoadBalancerAsync(new CreateLoadBalancerRequest
             {
@@ -98,11 +134,22 @@ namespace aws_service.Services
             {
                 throw new BadHttpRequestException($"Error occurred while creating load balancer for {domainName} with Status Code {response.HttpStatusCode}");
             }
+            _logger.LogInformation($"Load Balance for ${domainName} with Security Group {securityGroupId} has been created");
             return response.LoadBalancers.FirstOrDefault()!;
         }
 
-        private async Task<Listener> CreateLoadBalancerListeners(bool https, string loadBalancerArn, string certificateArn, string targetGroupArn)
+        /// <summary>
+        /// Add Listener in Load Balancer with given ARN
+        /// </summary>
+        /// <param name="https">Whether to configure HTTPS or HTTP Listener</param>
+        /// <param name="loadBalancerArn">ARN of Load Balance whose Listener will be added</param>
+        /// <param name="certificateArn">ARN of Certificate to associate with HTTPS Listener</param>
+        /// <param name="targetGroupArn">ARN of Target Group to forward request</param>
+        /// <returns></returns>
+        /// <exception cref="BadHttpRequestException"></exception>
+        private async Task<Listener> CreateLoadBalancerListener(bool https, string loadBalancerArn, string certificateArn, string targetGroupArn)
         {
+            _logger.LogInformation($"Adding {(https ? "HTTPS" : "HTTP")} Listener in ${loadBalancerArn}");
             CreateListenerRequest request;
             if (https)
             {
@@ -158,6 +205,7 @@ namespace aws_service.Services
             {
                 throw new BadHttpRequestException($"Error occurred while adding listeners in {loadBalancerArn} with Status Code {response.HttpStatusCode}");
             }
+            _logger.LogInformation($"{(https ? "HTTPS" : "HTTP")} Listener has been added in ${loadBalancerArn}");
             return response.Listeners.FirstOrDefault()!;
         }
     }

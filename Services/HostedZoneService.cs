@@ -61,6 +61,7 @@ namespace aws_service.Services
             {
                 throw new BadHttpRequestException($"Error occurred while creating Hosted Zone for {domainName} with Status Code {response.HttpStatusCode}");
             }
+            _logger.LogInformation($"Hosted Zone has been created for ${domainName}");
             return response.HostedZone.Id;
         }
 
@@ -81,6 +82,7 @@ namespace aws_service.Services
             {
                 throw new BadHttpRequestException($"Hosted Zone with name {domainName} does not exist.", 404);
             }
+            _logger.LogInformation($"Found Hosted Zone for {domainName}");
             return hostedZone;
         }
     }

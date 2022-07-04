@@ -17,6 +17,15 @@ namespace aws_service.Services
         /// <returns></returns>
         /// <exception cref="BadHttpRequestException">If AWS request produces an error</exception>
         Task CreateCertificateRecords(CertificateResourceRecord record, string hostedZoneIdstring, string domainName);
+
+        /// <summary>
+        /// Adds DNS records of Load Balancer in given Hosted Zone
+        /// </summary>
+        /// <param name="loadBalancer">An instance of <see cref="LoadBalancer"/> whose records will be added</param>
+        /// <param name="hostedZoneId">Id of Hosted Zone where records will be added</param>
+        /// <param name="domainName">Name of domain associated with Hosted Zone</param>
+        /// <returns></returns>
+        /// <exception cref="BadHttpRequestException"></exception>
         Task CreateLoadBalanceRecords(LoadBalancer loadBalancer, string hostedZoneId, string domainName);
     }
 
@@ -63,10 +72,7 @@ namespace aws_service.Services
                                 TTL = 300,
                                 ResourceRecords = new List<ResourceRecord>
                                 {
-                                    new ResourceRecord
-                                    {
-                                        Value = record.Value
-                                    }
+                                    new ResourceRecord { Value = record.Value }
                                 }
                             }
                         }
@@ -84,6 +90,7 @@ namespace aws_service.Services
             _logger.LogInformation($"CNAME records of SSL Certificate have been added for {domainName}");
         }
 
+        /// <inheritdoc/>
         public async Task CreateLoadBalanceRecords(LoadBalancer loadBalancer, string hostedZoneId, string domainName)
         {
             _logger.LogInformation($"Adding Load Balancer records to hosted zone {hostedZoneId}");
@@ -102,6 +109,7 @@ namespace aws_service.Services
             };
             if (recordAType != null)
             {
+                _logger.LogInformation($"A Type Records for {hostedZoneId} will be deleted");
                 request.ChangeBatch.Changes.Add(new Change
                 {
                     Action = ChangeAction.DELETE,
@@ -110,6 +118,7 @@ namespace aws_service.Services
             }
             if (recordAAAAType != null)
             {
+                _logger.LogInformation($"AAAA Type Records for {hostedZoneId} will be deleted");
                 request.ChangeBatch.Changes.Add(new Change
                 {
                     Action = ChangeAction.DELETE,
@@ -153,9 +162,15 @@ namespace aws_service.Services
             {
                 throw new BadHttpRequestException($"Error occurred while creating Records of Load Balancer in Hosted Zone {hostedZoneId} for {domainName} with Status Code {response.HttpStatusCode}");
             }
-            _logger.LogInformation($"A records of Load Balancer have been added in Hosted Zone {hostedZoneId}");
+            _logger.LogInformation($"A & AAAA records of Load Balancer have been added in Hosted Zone {hostedZoneId}");
         }
 
+        /// <summary>
+        /// Gets Resource Records of given Hosted Zone Id
+        /// </summary>
+        /// <param name="hostedZoneId">The Id of Hosted Zone</param>
+        /// <returns>A <see cref="List{T}"/> of <see cref="ResourceRecordSet"/></returns>
+        /// <exception cref="BadHttpRequestException"></exception>
         private async Task<List<ResourceRecordSet>> GetResourceRecords(string hostedZoneId)
         {
             var response = await _route53Client.ListResourceRecordSetsAsync(new ListResourceRecordSetsRequest

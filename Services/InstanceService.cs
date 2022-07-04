@@ -49,12 +49,14 @@ namespace aws_service.Services
         /// <inheritdoc/>
         public async Task MapInstanceWithDomain(string domainName, string instanceId)
         {
+            _logger.LogInformation($"Associating {domainName} with EC2 instance {instanceId}");
             var instance = await DescribeInstance(instanceId);
             var hostedZone = await _hostedZoneService.GetHostedZoneByName(domainName);
             var operation = _dbContext.operations
                 .Where((op) => op.Status == DomainOperationStatus.SSL_ACTIVATED && op.DomainName == domainName)
-                .FirstOrDefault();
-            await _loadBalancerService.ConfigureHTTPSTraffic(instance, domainName, "arn:aws:acm:us-east-1:434783347951:certificate/d5672749-54a5-42ef-a5dd-1abd274e7857", hostedZone.Id);
+                .FirstOrDefault()!;
+            _logger.LogInformation($"SSL Certificate with ARN ${operation.CertificateArn} will be used");
+            await _loadBalancerService.ConfigureHTTPSTraffic(instance, domainName, operation.CertificateArn!, hostedZone.Id);
         }
 
         /// <summary>
@@ -81,6 +83,7 @@ namespace aws_service.Services
                 var instance = reservation.Instances.Where((x) => x.InstanceId == instanceId).FirstOrDefault();
                 if (instance != null)
                 {
+                    _logger.LogInformation($"Found instance with id ${instanceId}");
                     return instance;
                 }
                 throw new BadHttpRequestException($"EC2 Instance with InstanceId {instanceId} does not exist.", 404);

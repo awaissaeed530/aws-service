@@ -6,7 +6,18 @@ using System.Net;
 namespace aws_service.Services
 {
     public interface IEC2Service {
+        /// <summary>
+        /// Get Default VPC associated with AWS Account
+        /// </summary>
+        /// <returns>An instance of <see cref="VPC"/></returns>
+        /// <exception cref="BadHttpRequestException"></exception>
         Task<Vpc> GetDefaultVPC();
+
+        /// <summary>
+        /// Get Default SubNets for "us-east-1a" & "us-east-1f" Availability Zones
+        /// </summary>
+        /// <returns>A <see cref="List{T}"/> of <see cref="Subnet"/></returns>
+        /// <exception cref="BadHttpRequestException"></exception>
         Task<List<Subnet>> GetDefaultSubnets();
     }
 
@@ -27,6 +38,7 @@ namespace aws_service.Services
                 RegionEndpoint.USEast1);
         }
 
+        /// <inheritdoc/>
         public async Task<Vpc> GetDefaultVPC()
         {
             var response = await _ec2Client.DescribeVpcsAsync(new DescribeVpcsRequest
@@ -48,9 +60,12 @@ namespace aws_service.Services
             {
                 throw new BadHttpRequestException($"Could not locate a default VPC. Please create one and try again");
             }
-            return response.Vpcs.FirstOrDefault()!;
+            var defaultVPC = response.Vpcs.FirstOrDefault()!;
+            _logger.LogInformation($"Found Default VPC {defaultVPC.VpcId}");
+            return defaultVPC;
         }
 
+        /// <inheritdoc/>
         public async Task<List<Subnet>> GetDefaultSubnets()
         {
             var response = await _ec2Client.DescribeSubnetsAsync(new DescribeSubnetsRequest
@@ -77,6 +92,8 @@ namespace aws_service.Services
             {
                 throw new BadHttpRequestException($"Unable to locate default subnets. Please ensure you have default subnets in your availability zones.");
             }
+            var subnetIds = response.Subnets.Select((sub) => sub.SubnetId);
+            _logger.LogInformation($"Found Default Subnets {string.Join(",", subnetIds)}");
             return response.Subnets;
         }
     }

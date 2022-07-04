@@ -68,10 +68,12 @@ namespace aws_service.Services
 
                 operation.Status = DomainOperationStatus.SSL_ACTIVATED;
                 operation.CertificateArn = certificateArn;
+
+                _logger.LogInformation($"SSL Certificate with ARN {certificateArn} has been associated with domain ${domainName}");
             }
             catch (Exception e)
             {
-                _logger.LogError($"An error occureed while creating SSL for {domainName}");
+                _logger.LogError($"An error occurred while creating SSL for {domainName}");
                 _logger.LogError(e.Message);
                 operation.Status = DomainOperationStatus.SSL_ACTIVATION_FAILED;
             }
